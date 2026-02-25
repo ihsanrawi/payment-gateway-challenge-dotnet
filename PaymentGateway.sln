@@ -24,6 +24,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionFolder", "{3C5061CE-E95A-4F61-A860-D15BC55E06D3}"
 	ProjectSection(SolutionItems) = preProject
 		Payments.http = Payments.http
+		README.md = README.md
 	EndProjectSection
 EndProject
 Global
