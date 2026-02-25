@@ -1,8 +1,15 @@
+using AutoMapper;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 
-using PaymentGateway.Api.Models.Requests;
-using PaymentGateway.Api.Repository;
+using Microsoft.Extensions.Options;
+
+using PaymentGateway.Api.Validators;
+using PaymentGateway.Application.Services;
+using PaymentGateway.Domain.Configs;
+using PaymentGateway.Domain.Mappers;
+using PaymentGateway.Infrastructure.External;
+using PaymentGateway.Infrastructure.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,19 +17,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders()
     .AddConsole();
 
-// Add services to the container.
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<PaymentsRepository>();
-// FluentValidation automatic integration
-builder.Services.AddFluentValidationAutoValidation()
-    .AddFluentValidationClientsideAdapters();
+builder.Services.Configure<BankSimulatorConfigs>(builder.Configuration.GetSection("BankSimulator"));
+builder.Services.AddSingleton<IPaymentsRepository, PaymentsRepository>();
+builder.Services.AddSingleton<IIdempotencyRepository, IdempotencyRepository>();
+builder.Services.AddScoped<IPaymentProcessorService, PaymentProcessorService>();
+builder.Services.AddHttpClient<IBankClient, BankClient>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<IOptions<BankSimulatorConfigs>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+});
 
-// Register validators
+// Register validators (manual validation - no auto-validation)
 builder.Services.AddValidatorsFromAssemblyContaining<PostPaymentRequestValidator>();
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(typeof(PaymentMappingProfile));
 
 var app = builder.Build();
 

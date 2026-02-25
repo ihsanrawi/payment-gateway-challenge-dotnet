@@ -1,5 +1,7 @@
 using FluentValidation.Results;
-using PaymentGateway.Api.Models.Requests;
+
+using PaymentGateway.Api.Validators;
+using PaymentGateway.Domain.Models;
 
 namespace PaymentGateway.Api.Tests
 {
@@ -12,7 +14,7 @@ namespace PaymentGateway.Api.Tests
             {
                 CardNumber = "4242424242424242",
                 ExpiryMonth = 12,
-                ExpiryYear = 2025,
+                ExpiryYear = DateTime.Now.Year + 1,
                 Currency = "GBP",
                 Amount = 10050,
                 Cvv = "123"
@@ -79,12 +81,52 @@ namespace PaymentGateway.Api.Tests
         {
             var req = CreateValidRequest();
             req.ExpiryMonth = 6; // valid month to trigger year check
-            req.ExpiryYear = 2035; // out of allowed range
+            req.ExpiryYear = DateTime.Now.Year - 1; // past year
 
             var result = _validator.Validate(req);
 
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, e => e.PropertyName == nameof(req.ExpiryYear) && e.ErrorMessage == "Expiry year must be between 2023-2030");
+            Assert.Contains(result.Errors, e => e.PropertyName == nameof(req.ExpiryYear) && e.ErrorMessage == "Card has expired");
+        }
+
+        [Fact]
+        public void ExpiryDate_LastDayOfCurrentMonth_ShouldBeValid()
+        {
+            // This test verifies that a card expiring in the current month is still valid
+            var now = DateTime.Now;
+            var req = CreateValidRequest();
+            req.ExpiryMonth = now.Month;
+            req.ExpiryYear = now.Year;
+
+            var result = _validator.Validate(req);
+
+            // Should be valid because card expires at END of month
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ExpiryDate_PreviousMonth_ShouldBeExpired()
+        {
+            // This test verifies that a card from last month is expired
+            var now = DateTime.Now;
+            var req = CreateValidRequest();
+
+            // Set to previous month
+            if (now.Month == 1)
+            {
+                req.ExpiryMonth = 12;
+                req.ExpiryYear = now.Year - 1;
+            }
+            else
+            {
+                req.ExpiryMonth = now.Month - 1;
+                req.ExpiryYear = now.Year;
+            }
+
+            var result = _validator.Validate(req);
+
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e.PropertyName == nameof(req.ExpiryYear) && e.ErrorMessage == "Card has expired");
         }
 
         [Fact]

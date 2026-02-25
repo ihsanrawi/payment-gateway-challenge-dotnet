@@ -1,0 +1,89 @@
+###
+### Payment Gateway API Tests
+### Base URL: https://localhost:7092//api/payments
+###
+
+### ============================================================================
+### POST /api/payments - Create Payments
+### ============================================================================
+
+### 1. Authorized Payment (Card ending in 1234) odd number
+POST {{baseUrl}}/api/payments
+Idempotency-Key: {{guid_authorized}}
+Content-Type: application/json
+
+{
+  "cardNumber": "12345678901234",
+  "expiryMonth": 12,
+  "expiryYear": 2028,
+  "currency": "GBP",
+  "amount": 1000,
+  "cvv": "123"
+}
+
+###
+
+### 2. Declined Payment (Card ending in 2345) - even number
+POST {{baseUrl}}/api/payments
+Idempotency-Key: {{guid_declined}}
+Content-Type: application/json
+
+{
+  "cardNumber": "123456789012345",
+  "expiryMonth": 6,
+  "expiryYear": 2028,
+  "currency": "GBP",
+  "amount": 5000,
+  "cvv": "456"
+}
+
+###
+
+### 3. Rejected Payment (Invalid - Missing CVV) - Rejected due to missing CVV
+POST {{baseUrl}}/api/payments
+Idempotency-Key: {{guid_rejected}}
+Content-Type: application/json
+
+{
+  "cardNumber": "1234567890123456",
+  "expiryMonth": 3,
+  "expiryYear": 2027,
+  "currency": "USD",
+  "amount": 2000,
+  "cvv": "45"
+}
+
+###
+
+### 4. Idempotency Test - Same request should return same payment
+POST {{baseUrl}}/api/payments
+Idempotency-Key: {{guid_authorized}}
+Content-Type: application/json
+
+{
+  "cardNumber": "4242424242424242",
+  "expiryMonth": 12,
+  "expiryYear": 2025,
+  "currency": "GBP",
+  "amount": 1000,
+  "cvv": "123"
+}
+
+### ============================================================================
+### GET /api/payments/{id} - Retrieve Payments
+### ============================================================================
+### Note: Replace {{paymentId}} with actual IDs returned from POST requests above
+
+### 5. Retrieve Payment
+GET {{baseUrl}}/api/payments/{{paymentId}}
+
+###
+
+### ============================================================================
+### Variables
+### ============================================================================
+@baseUrl = https://localhost:7092/
+@guid_authorized = 11111111-1111-1111-1111-111111111111
+@guid_declined = 22222222-2222-2222-2222-222222222222
+@guid_rejected = 33333333-3333-3333-3333-333333333333
+@paymentId = <replace-with-actual-id-from-response>

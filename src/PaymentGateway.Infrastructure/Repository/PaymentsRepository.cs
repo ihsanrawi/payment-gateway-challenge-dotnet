@@ -1,17 +1,17 @@
-﻿using PaymentGateway.Api.Models.Responses;
+﻿using PaymentGateway.Domain.Entities;
 
-namespace PaymentGateway.Api.Repository;
+namespace PaymentGateway.Infrastructure.Repository;
 
 public class PaymentsRepository : IPaymentsRepository
 {
-    private readonly List<PostPaymentResponse> _payments = [];
-    
-    public void Add(PostPaymentResponse payment)
+    private readonly List<Payment> _payments = [];
+
+    public void Add(Payment payment)
     {
         _payments.Add(payment);
     }
 
-    public PostPaymentResponse? Get(Guid id)
+    public Payment? Get(Guid id)
     {
         if (id == Guid.Empty)
         {
