@@ -12,7 +12,6 @@ A .NET 8 Web API implementation of a payment gateway that processes card payment
 
 ## Table of Contents
 
-- [Overview](#overview)
 - [Design Considerations](#design-considerations)
 - [Assumptions Made](#assumptions-made)
 - [Project Structure](#project-structure)
@@ -22,20 +21,6 @@ A .NET 8 Web API implementation of a payment gateway that processes card payment
 - [Idempotency](#idempotency)
 - [Testing](#testing)
 - [Technologies](#technologies)
-
----
-
-## Overview
-
-This payment gateway API allows merchants to process card payments and retrieve payment details. It integrates with a simulated bank service that approves or declines transactions based on card number patterns.
-
-### Payment Status Types
-
-| Status | Description | Bank Called? |
-|--------|-------------|--------------|
-| **Authorized** | Payment was approved by the acquiring bank | Yes |
-| **Declined** | Payment was declined by the acquiring bank | Yes |
-| **Rejected** | Payment was rejected due to invalid request data | No |
 
 ---
 
@@ -49,7 +34,7 @@ The IBankClient abstraction keeps the bank integration cleanly separated. For te
 
 For this assessment, I kept persistence in-memory to keep things simple and focused on the core logic. Bank responses are mapped clearly to payment statuses, and unexpected errors default to a predictable rejected state so behaviour is consistent. I also made sure we never return full card numbers, only the last four digits to keep things secure by default.
 
-In terms of testing, unit tests cover validation and service logic using a fake bank client, and integration tests verify the API works end-to-end. The overall structure also leaves room for future enhancements like supporting multiple bank providers or adding retry logic without needing a major redesign.
+In terms of testing, unit tests cover validation and service logic using a fake bank client. The overall structure also leaves room for future enhancements like supporting multiple bank providers or adding retry logic without needing a major redesign.
 
 ---
 
@@ -171,6 +156,7 @@ You can also test the API using the provided `Payments.http` file in the root di
 - Authorized payment (card ending in odd number)
 - Declined payment (card ending in even number)
 - Rejected payment (invalid CVV)
+- Simulate bank service unavailable
 - Idempotency test scenarios
 - Payment retrieval
 
@@ -229,26 +215,6 @@ GET /api/payments/{id}
   "amount": 10050
 }
 ```
-
----
-
-## Payment Statuses
-
-| Status | Description | Bank Called? |
-|--------|-------------|--------------|
-| **Authorized** | Payment approved by acquiring bank | Yes |
-| **Declined** | Payment declined by acquiring bank | Yes |
-| **Rejected** | Invalid request data (validation failed) | No |
-
-### Bank Simulator Behavior
-
-The simulator responds based on the last digit of the card number:
-
-| Card Ending | Response |
-|-------------|----------|
-| **Odd (1,3,5,7,9)** | Authorized |
-| **Even (2,4,6,8)** | Declined |
-| **Zero (0)** | 503 Service Unavailable |
 
 ---
 

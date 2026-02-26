@@ -52,7 +52,8 @@ public class PaymentsController(
         {
             logger.LogInformation("Processing payment with idempotency key {IdempotencyKey}", idempotencyKeyGuid);
 
-            var response = await paymentProcessorService.ProcessPaymentAsync(idempotencyKeyGuid, request, cancellationToken);
+            var response =
+                await paymentProcessorService.ProcessPaymentAsync(idempotencyKeyGuid, request, cancellationToken);
 
             logger.LogInformation("Payment processed with idempotency key {IdempotencyKey}", idempotencyKeyGuid);
             return Ok(response);
@@ -61,6 +62,11 @@ public class PaymentsController(
         {
             logger.LogWarning("Payment processing cancelled for idempotency key {IdempotencyKey}", idempotencyKeyGuid);
             return StatusCode(499, "Request cancelled");
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Bank service unavailable for idempotency key {IdempotencyKey}", idempotencyKeyGuid);
+            return StatusCode(503, "Bank service unavailable");
         }
         catch (Exception ex)
         {
