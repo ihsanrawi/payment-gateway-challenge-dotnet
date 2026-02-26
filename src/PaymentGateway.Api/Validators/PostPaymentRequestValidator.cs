@@ -40,9 +40,7 @@ public class PostPaymentRequestValidator : AbstractValidator<PostPaymentRequest>
 
         RuleFor(p => p.Amount)
             .GreaterThan(0)
-            .WithMessage("Amount must be greater than zero")
-            .LessThanOrEqualTo(100_000_000) // example: max 1,000,000.00 in minor units
-            .WithMessage("Amount is too large.");
+            .WithMessage("Amount must be greater than zero");
 
         RuleFor(p => p.Cvv)
             .NotEmpty()
