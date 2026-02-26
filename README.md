@@ -17,10 +17,8 @@ A .NET 8 Web API implementation of a payment gateway that processes card payment
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [API Endpoints](#api-endpoints)
-- [Payment Statuses](#payment-statuses)
 - [Idempotency](#idempotency)
 - [Testing](#testing)
-- [Technologies](#technologies)
 
 ---
 
