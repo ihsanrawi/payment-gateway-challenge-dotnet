@@ -13,7 +13,6 @@ public class PostPaymentRequestValidator : AbstractValidator<PostPaymentRequest>
 
     public PostPaymentRequestValidator()
     {
-        // TODO: validated against luhn algorithm and should not be persisted in plaintext
         RuleFor(p => p.CardNumber)
             .NotEmpty()
             .WithMessage("Card number is required")

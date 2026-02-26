@@ -19,19 +19,6 @@ public static class PaymentCreationMapper
         );
     }
 
-    public static Payment MapRejected(Guid paymentId, PostPaymentRequest request)
-    {
-        return new Payment(
-            paymentId,
-            PaymentStatus.Rejected,
-            GetLastFourCardDigits(request.CardNumber),
-            request.ExpiryMonth,
-            request.ExpiryYear,
-            request.Currency,
-            request.Amount
-        );
-    }
-
     private static int GetLastFourCardDigits(string cardNumber)
     {
         if (string.IsNullOrEmpty(cardNumber) || cardNumber.Length < 4)

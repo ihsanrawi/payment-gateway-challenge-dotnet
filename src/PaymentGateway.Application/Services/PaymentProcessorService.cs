@@ -33,7 +33,7 @@ public class PaymentProcessorService(
         if (!bankPaymentResult.Success)
         {
             logger.LogWarning("Bank service unavailable for idempotency key {IdempotencyKey}", idempotencyKey);
-            throw new HttpRequestException("Bank service is unavailable");
+            throw new HttpRequestException(bankPaymentResult.ErrorMessage);
         }
 
         var paymentId = Guid.NewGuid();
@@ -55,16 +55,5 @@ public class PaymentProcessorService(
         }
 
         return Task.FromResult<PostPaymentResponse?>(mapper.Map<PostPaymentResponse>(processedPayment));
-    }
-
-    public Task<PostPaymentResponse> ProcessRejectedPaymentAsync(Guid idempotencyKey, PostPaymentRequest request)
-    {
-        var paymentId = Guid.NewGuid();
-        var paymentEntity = PaymentCreationMapper.MapRejected(paymentId, request);
-        paymentsRepository.Add(paymentEntity);
-
-        logger.LogInformation("Created rejected payment with idempotency key {IdempotencyKey} (key not locked)", idempotencyKey);
-
-        return Task.FromResult(mapper.Map<PostPaymentResponse>(paymentEntity));
     }
 }

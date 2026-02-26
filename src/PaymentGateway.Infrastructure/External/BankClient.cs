@@ -23,7 +23,7 @@ public class BankClient(HttpClient httpClient) : IBankClient
         using var response = await httpClient.PostAsJsonAsync("/payments", bankRequest, cancellationToken);
         if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
         {
-            throw new HttpRequestException("Bank service is unavailable");
+            return new BankPaymentResult(false, false, null, "Bank service unavailable");
         }
 
         response.EnsureSuccessStatusCode();

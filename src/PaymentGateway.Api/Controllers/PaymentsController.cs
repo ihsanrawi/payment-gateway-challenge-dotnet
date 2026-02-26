@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
 using PaymentGateway.Application.Services;
+using PaymentGateway.Domain.Enums;
 using PaymentGateway.Domain.Models;
 
 namespace PaymentGateway.Api.Controllers;
@@ -39,9 +40,12 @@ public class PaymentsController(
         if (!validationResult.IsValid)
         {
             logger.LogInformation("Payment validation failed for idempotency key {IdempotencyKey}", idempotencyKeyGuid);
-            var rejectedResponse = await paymentProcessorService.ProcessRejectedPaymentAsync(idempotencyKeyGuid, request);
 
-            return Ok(rejectedResponse);
+            return BadRequest(new
+            {
+                status = PaymentStatus.Rejected.ToString(),
+                errors = validationResult.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage })
+            });
         }
 
         try

@@ -54,12 +54,14 @@ public class PaymentsControllerTests
         request.Content = JsonContent.Create(invalidRequest);
         var response = await client.SendAsync(request);
 
-        // Assert - Should return 200 OK with Rejected status (not 400)
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        // Assert - Should return 400 Bad Request with Rejected status
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
-        var paymentResponse = await response.Content.ReadFromJsonAsync<PostPaymentResponse>();
-        Assert.NotNull(paymentResponse);
-        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+        var jsonDoc = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonDocument>();
+        Assert.NotNull(jsonDoc);
+        Assert.Equal("Rejected", jsonDoc.RootElement.GetProperty("status").GetString());
+        Assert.True(jsonDoc.RootElement.TryGetProperty("errors", out var errors));
+        Assert.True(errors.GetArrayLength() > 0);
     }
 
     [Fact]
@@ -208,7 +210,7 @@ public class PaymentsControllerTests
         request1.Headers.Add("Idempotency-Key", idempotencyKey.ToString());
         request1.Content = JsonContent.Create(invalidRequest);
         var response1 = await client.SendAsync(request1);
-        var payment1 = await response1.Content.ReadFromJsonAsync<PostPaymentResponse>();
+        var jsonDoc1 = await response1.Content.ReadFromJsonAsync<System.Text.Json.JsonDocument>();
 
         // Send second request with valid data using same idempotency key (should be processed)
         using var request2 = new HttpRequestMessage(HttpMethod.Post, "/api/Payments");
@@ -217,11 +219,10 @@ public class PaymentsControllerTests
         var response2 = await client.SendAsync(request2);
         var payment2 = await response2.Content.ReadFromJsonAsync<PostPaymentResponse>();
 
-        // Assert - First should be Rejected, second should be Authorized with different payment ID
-        Assert.NotNull(payment1);
+        // Assert - First should be Rejected, second should be Authorized
+        Assert.NotNull(jsonDoc1);
         Assert.NotNull(payment2);
-        Assert.NotEqual(payment1.Id, payment2.Id); // Different payment IDs
-        Assert.Equal(PaymentStatus.Rejected, payment1.Status);
+        Assert.Equal("Rejected", jsonDoc1.RootElement.GetProperty("status").GetString());
         Assert.Equal(PaymentStatus.Authorized, payment2.Status);
     }
 

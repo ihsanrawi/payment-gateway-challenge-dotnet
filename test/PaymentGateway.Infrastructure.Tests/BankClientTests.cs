@@ -67,24 +67,18 @@ public class BankClientTests
     }
 
     [Fact]
-    public async Task ProcessPaymentAsync_BankReturnsServiceUnavailable_ThrowsHttpRequestException()
+    public async Task ProcessPaymentAsync_BankReturnsServiceUnavailable_ReturnsFailureResult()
     {
         var mockHandler = MockHttpMessageHandler.ForServiceUnavailable();
         var httpClient = CreateHttpClient(mockHandler);
         var bankClient = new BankClient(httpClient);
 
-        await Assert.ThrowsAsync<HttpRequestException>(
-            () => bankClient.ProcessPaymentAsync(_validRequest));
+        var result = await bankClient.ProcessPaymentAsync(_validRequest);
 
-        // Verify exception message
-        try
-        {
-            await bankClient.ProcessPaymentAsync(_validRequest);
-        }
-        catch (HttpRequestException ex)
-        {
-            Assert.Equal("Bank service is unavailable", ex.Message);
-        }
+        Assert.False(result.Success);
+        Assert.False(result.Authorized);
+        Assert.Null(result.AuthorizationCode);
+        Assert.Equal("Bank service unavailable", result.ErrorMessage);
     }
 
     [Fact]
