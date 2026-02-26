@@ -8,7 +8,7 @@ A .NET 8 Web API implementation of a payment gateway that processes card payment
 - Three payment statuses: Authorized, Declined, Rejected
 - PCI DSS compliant card number handling (only last 4 digits stored)
 - In-memory storage (no database required)
-- Comprehensive test coverage (50+ tests)
+- Comprehensive test coverage (48 tests)
 
 ## Table of Contents
 
@@ -253,6 +253,6 @@ dotnet test
 | Project | Tests | Coverage |
 |---------|-------|----------|
 | PaymentGateway.Api.Tests | 20 | Controllers, Validators |
-| PaymentGateway.Application.Tests | 10 | Service layer |
+| PaymentGateway.Application.Tests | 8 | Service layer |
 | PaymentGateway.Infrastructure.Tests | 20 | Repositories, Bank Client |
-| **Total** | **50** | All passing |
+| **Total** | **48** | All passing |
