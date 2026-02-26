@@ -1,8 +1,10 @@
+using System.Collections.Concurrent;
+
 namespace PaymentGateway.Infrastructure.Repository;
 
 public class IdempotencyRepository : IIdempotencyRepository
 {
-    private readonly Dictionary<Guid, Guid> _mappings = [];
+    private readonly ConcurrentDictionary<Guid, Guid> _mappings = [];
 
     public Guid? GetPaymentId(Guid idempotencyKey)
     {
@@ -26,6 +28,6 @@ public class IdempotencyRepository : IIdempotencyRepository
             throw new ArgumentNullException(nameof(paymentId), "Payment ID cannot be empty");
         }
 
-        _mappings[idempotencyKey] = paymentId;
+        _mappings.TryAdd(idempotencyKey, paymentId);
     }
 }

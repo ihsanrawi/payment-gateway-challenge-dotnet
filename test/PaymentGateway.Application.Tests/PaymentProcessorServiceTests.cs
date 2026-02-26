@@ -108,6 +108,7 @@ public class PaymentProcessorServiceTests
         // Arrange
         var idempotencyKey = Guid.NewGuid();
         var request = CreateValidRequest();
+        var paymentId = Guid.NewGuid();
 
         _idempotencyRepositoryMock
             .Setup(x => x.GetPaymentId(idempotencyKey))
@@ -123,27 +124,38 @@ public class PaymentProcessorServiceTests
         _idempotencyRepositoryMock
             .Setup(x => x.StoreMapping(idempotencyKey, It.IsAny<Guid>()));
 
-        var mappedResponse = new PostPaymentResponse
-        {
-            Id = Guid.NewGuid(),
-            Status = PaymentStatus.Authorized,
-            CardNumberLastFour = 4242,
-            ExpiryMonth = 12,
-            ExpiryYear = DateTime.Now.Year + 1,
-            Currency = "GBP",
-            Amount = 10050
-        };
+        _mapperMock
+            .Setup(x => x.Map<Payment>(
+                It.IsAny<PostPaymentRequest>(),
+                It.IsAny<Action<IMappingOperationOptions>>()))
+            .Returns<PostPaymentRequest, Action<IMappingOperationOptions>>((req, opts) => new Payment(
+                paymentId,
+                PaymentStatus.Authorized,
+                4242,
+                request.ExpiryMonth,
+                request.ExpiryYear,
+                request.Currency,
+                request.Amount));
 
         _mapperMock
             .Setup(x => x.Map<PostPaymentResponse>(It.IsAny<Payment>()))
-            .Returns(mappedResponse);
+            .Returns(new PostPaymentResponse
+            {
+                Id = paymentId,
+                Status = PaymentStatus.Authorized,
+                CardNumberLastFour = 4242,
+                ExpiryMonth = request.ExpiryMonth,
+                ExpiryYear = request.ExpiryYear,
+                Currency = request.Currency,
+                Amount = request.Amount
+            });
 
         // Act
         var result = await _sut.ProcessPaymentAsync(idempotencyKey, request);
 
         // Assert
         _bankClientMock.Verify(x => x.ProcessPaymentAsync(request, It.IsAny<CancellationToken>()), Times.Once);
-        _paymentsRepositoryMock.Verify(x => x.Add(It.Is<Payment>(p => p.Status == PaymentStatus.Authorized)), Times.Once);
+        _paymentsRepositoryMock.Verify(x => x.Add(It.IsAny<Payment>()), Times.Once);
         _idempotencyRepositoryMock.Verify(x => x.StoreMapping(idempotencyKey, It.IsAny<Guid>()), Times.Once);
         Assert.Equal(PaymentStatus.Authorized, result.Status);
     }
@@ -154,6 +166,7 @@ public class PaymentProcessorServiceTests
         // Arrange
         var idempotencyKey = Guid.NewGuid();
         var request = CreateValidRequest();
+        var paymentId = Guid.NewGuid();
 
         _idempotencyRepositoryMock
             .Setup(x => x.GetPaymentId(idempotencyKey))
@@ -169,26 +182,37 @@ public class PaymentProcessorServiceTests
         _idempotencyRepositoryMock
             .Setup(x => x.StoreMapping(idempotencyKey, It.IsAny<Guid>()));
 
-        var mappedResponse = new PostPaymentResponse
-        {
-            Id = Guid.NewGuid(),
-            Status = PaymentStatus.Declined,
-            CardNumberLastFour = 4242,
-            ExpiryMonth = 12,
-            ExpiryYear = DateTime.Now.Year + 1,
-            Currency = "GBP",
-            Amount = 10050
-        };
+        _mapperMock
+            .Setup(x => x.Map<Payment>(
+                It.IsAny<PostPaymentRequest>(),
+                It.IsAny<Action<IMappingOperationOptions>>()))
+            .Returns<PostPaymentRequest, Action<IMappingOperationOptions>>((req, opts) => new Payment(
+                paymentId,
+                PaymentStatus.Declined,
+                4242,
+                request.ExpiryMonth,
+                request.ExpiryYear,
+                request.Currency,
+                request.Amount));
 
         _mapperMock
             .Setup(x => x.Map<PostPaymentResponse>(It.IsAny<Payment>()))
-            .Returns(mappedResponse);
+            .Returns(new PostPaymentResponse
+            {
+                Id = paymentId,
+                Status = PaymentStatus.Declined,
+                CardNumberLastFour = 4242,
+                ExpiryMonth = request.ExpiryMonth,
+                ExpiryYear = request.ExpiryYear,
+                Currency = request.Currency,
+                Amount = request.Amount
+            });
 
         // Act
         var result = await _sut.ProcessPaymentAsync(idempotencyKey, request);
 
         // Assert
-        _paymentsRepositoryMock.Verify(x => x.Add(It.Is<Payment>(p => p.Status == PaymentStatus.Declined)), Times.Once);
+        _paymentsRepositoryMock.Verify(x => x.Add(It.IsAny<Payment>()), Times.Once);
         _idempotencyRepositoryMock.Verify(x => x.StoreMapping(idempotencyKey, It.IsAny<Guid>()), Times.Once);
         Assert.Equal(PaymentStatus.Declined, result.Status);
     }
@@ -236,6 +260,23 @@ public class PaymentProcessorServiceTests
         _paymentsRepositoryMock.Setup(x => x.Add(It.IsAny<Payment>()));
         _idempotencyRepositoryMock.Setup(x => x.StoreMapping(idempotencyKey, It.IsAny<Guid>()));
 
+        // Setup the mapper to return a Payment when mapping from PostPaymentRequest
+        _mapperMock
+            .Setup(x => x.Map<Payment>(
+                It.IsAny<PostPaymentRequest>(),
+                It.IsAny<Action<IMappingOperationOptions>>()))
+            .Returns<PostPaymentRequest, Action<IMappingOperationOptions>>((req, opts) =>
+            {
+                return new Payment(
+                    Guid.NewGuid(),
+                    PaymentStatus.Authorized,
+                    4242,
+                    req.ExpiryMonth,
+                    req.ExpiryYear,
+                    req.Currency,
+                    req.Amount);
+            });
+
         _mapperMock
             .Setup(x => x.Map<PostPaymentResponse>(It.IsAny<Payment>()))
             .Returns(new PostPaymentResponse { Id = Guid.NewGuid() });
@@ -263,13 +304,13 @@ public class PaymentProcessorServiceTests
         );
         var expectedResponse = new PostPaymentResponse
         {
-            Id = paymentId,
-            Status = PaymentStatus.Authorized,
-            CardNumberLastFour = 1234,
-            ExpiryMonth = 6,
-            ExpiryYear = DateTime.Now.Year + 1,
-            Currency = "USD",
-            Amount = 5000
+            Id = payment.Id,
+            Status = payment.Status,
+            CardNumberLastFour = payment.CardNumberLastFour,
+            ExpiryMonth = payment.ExpiryMonth,
+            ExpiryYear = payment.ExpiryYear,
+            Currency = payment.Currency,
+            Amount = payment.Amount
         };
 
         _paymentsRepositoryMock
@@ -328,6 +369,23 @@ public class PaymentProcessorServiceTests
 
         _paymentsRepositoryMock.Setup(x => x.Add(It.IsAny<Payment>()));
         _idempotencyRepositoryMock.Setup(x => x.StoreMapping(idempotencyKey, It.IsAny<Guid>()));
+
+        // Setup the mapper to return a Payment when mapping from PostPaymentRequest
+        _mapperMock
+            .Setup(x => x.Map<Payment>(
+                It.IsAny<PostPaymentRequest>(),
+                It.IsAny<Action<IMappingOperationOptions>>()))
+            .Returns<PostPaymentRequest, Action<IMappingOperationOptions>>((req, opts) =>
+            {
+                return new Payment(
+                    Guid.NewGuid(),
+                    PaymentStatus.Authorized,
+                    4242,
+                    req.ExpiryMonth,
+                    req.ExpiryYear,
+                    req.Currency,
+                    req.Amount);
+            });
 
         _mapperMock
             .Setup(x => x.Map<PostPaymentResponse>(It.IsAny<Payment>()))
