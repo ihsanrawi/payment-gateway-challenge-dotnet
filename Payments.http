@@ -55,9 +55,9 @@ Content-Type: application/json
 
 ###
 
-### 4. Simulate Bank Service Unavailable - Rejected due to bank service unavailability
+### 4. Simulate Bank Service Unavailable - bank service unavailability
 POST {{baseUrl}}/api/payments
-Idempotency-Key: {{guid_rejected}}
+Idempotency-Key: {{guid_bank_unavailable}}
 Content-Type: application/json
 
 {
@@ -77,9 +77,9 @@ Idempotency-Key: {{guid_authorized}}
 Content-Type: application/json
 
 {
-  "cardNumber": "4242424242424242",
+  "cardNumber": "12345678901234",
   "expiryMonth": 12,
-  "expiryYear": 2025,
+  "expiryYear": 2026,
   "currency": "GBP",
   "amount": 1000,
   "cvv": "123"

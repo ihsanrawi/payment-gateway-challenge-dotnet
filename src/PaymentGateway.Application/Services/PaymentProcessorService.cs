@@ -1,7 +1,7 @@
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 
-using PaymentGateway.Domain.Mappers;
+using PaymentGateway.Domain.Entities;
 using PaymentGateway.Domain.Models;
 using PaymentGateway.Infrastructure.External;
 using PaymentGateway.Infrastructure.Repository;
@@ -24,6 +24,7 @@ public class PaymentProcessorService(
             var existingPayment = paymentsRepository.Get(existingPaymentId.Value);
             if (existingPayment != null)    
             {
+                logger.LogInformation("Payment already processed with idempotency key {IdempotencyKey}. Returning existing payment with ID {PaymentId}", idempotencyKey, existingPaymentId);
                 return mapper.Map<PostPaymentResponse>(existingPayment);
             }
         }
@@ -37,7 +38,11 @@ public class PaymentProcessorService(
         }
 
         var paymentId = Guid.NewGuid();
-        var paymentEntity = PaymentCreationMapper.Map(paymentId, request, bankPaymentResult.Authorized);
+        var paymentEntity = mapper.Map<Payment>(request, opts =>
+        {
+            opts.Items["PaymentId"] = paymentId;
+            opts.Items["IsAuthorized"] = bankPaymentResult.Authorized;
+        });
         paymentsRepository.Add(paymentEntity);
 
         idempotencyRepository.StoreMapping(idempotencyKey, paymentId);
